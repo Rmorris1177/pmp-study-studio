@@ -394,6 +394,10 @@ function celebrateCompletion(points){
  document.body.append(layer);setTimeout(()=>layer.remove(),2900);
 }
 function act(action){
+ // Reject answers after the deadline, even if the timer tick has not fired yet.
+ if((action.startsWith('exam-pick-')||action==='exam-next')&&state.view==='exam'&&state.exam&&!state.exam.finishedAt&&examTimeRemaining(state.exam)===0){
+  state.exam.finishedAt=Date.now();render();rememberPosition();return;
+ }
  if(action==='resume-saved'){
   const target=state.lastStudy||{lesson:state.lesson,section:state.section,view:state.view==='outline'?'learn':state.view,scroll:0};
   returning=false;state.lesson=target.lesson;state.section=target.section;state.view=target.view;
