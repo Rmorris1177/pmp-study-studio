@@ -1,0 +1,59 @@
+// Run after installing Playwright: node tests/browser-smoke.cjs
+// Serves the development build locally; does not publish or modify the live site.
+const { chromium } = require('playwright');
+const http = require('node:http');
+const fs = require('node:fs');
+const path = require('node:path');
+const assert = require('node:assert/strict');
+const root = path.resolve(__dirname, '..');
+const types = { '.html': 'text/html', '.js': 'text/javascript', '.png': 'image/png', '.svg': 'image/svg+xml', '.webmanifest': 'application/manifest+json' };
+const server = http.createServer((req, res) => {
+  const url = new URL(req.url, 'http://localhost');
+  const name = decodeURIComponent(url.pathname).replace(/^\/+/, '') || 'index.html';
+  const file = path.resolve(root, name);
+  if (!file.startsWith(root + path.sep)) { res.writeHead(403).end(); return; }
+  fs.readFile(file, (err, data) => {
+    if (err) { res.writeHead(404).end(); return; }
+    res.writeHead(200, { 'Content-Type': types[path.extname(file)] || 'application/octet-stream' }).end(data);
+  });
+});
+(async () => {
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  const url = 'http://127.0.0.1:' + server.address().port + '/';
+  let browser;
+  try {
+    browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+    const errors = [];
+    page.on('pageerror', err => errors.push(err.message));
+    await page.goto(url);
+    await page.locator('#card').waitFor();
+    assert.match(await page.locator('#card').innerText(), /Essential notes/i);
+    // Installing must not navigate away from the current study screen.
+    await page.locator('#install-app').click();
+    assert.match(await page.locator('#card').innerText(), /Essential notes/i);
+    await page.getByRole('button', { name: 'Start practice' }).click();
+    await page.locator('.options input').first().check();
+    await page.getByRole('button', { name: 'Check answer' }).click();
+    assert.match(await page.locator('#card').innerText(), /Correct|Incorrect/);
+    await page.reload();
+    assert.match(await page.locator('#card').innerText(), /Welcome back/);
+    await page.getByRole('button', { name: 'Resume studying' }).click();
+    assert.match(await page.locator('#card').innerText(), /Correct|Incorrect/);
+    await page.locator('#outline').click();
+    await page.getByRole('button', { name: 'Open exam simulator' }).click();
+    await page.getByRole('button', { name: 'Start 30 questions' }).click();
+    assert.match(await page.locator('#card').innerText(), /Question 1 of 30/);
+    await page.locator('.exam-choice input').first().check();
+    await page.getByRole('button', { name: 'Save answer and next' }).click();
+    assert.match(await page.locator('#card').innerText(), /Question 2 of 30/);
+    await page.reload();
+    await page.getByRole('button', { name: 'Resume studying' }).click();
+    assert.match(await page.locator('#card').innerText(), /Question 2 of 30/);
+    assert.deepEqual(errors, [], 'Browser JavaScript errors');
+    console.log('PASS: browser navigation, install button, practice answer, reload/resume, exam answer and resume.');
+  } finally {
+    if (browser) await browser.close();
+    await new Promise(resolve => server.close(resolve));
+  }
+})().catch(err => { console.error(err); process.exitCode = 1; server.close(); });
