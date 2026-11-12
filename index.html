@@ -139,9 +139,9 @@ function playSound(kind){
  try{
   const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
   audioContext ||= new AC();if(audioContext.state==='suspended')audioContext.resume();
-  const notes=kind==='victory'?[523.25,659.25,783.99,1046.5]:[659.25,880];
-  notes.forEach((freq,i)=>{const osc=audioContext.createOscillator(),gain=audioContext.createGain(),t=audioContext.currentTime+i*(kind==='victory'?.14:.075);
-   osc.type='sine';osc.frequency.setValueAtTime(freq,t);gain.gain.setValueAtTime(.0001,t);gain.gain.exponentialRampToValueAtTime(.10,t+.018);gain.gain.exponentialRampToValueAtTime(.0001,t+(kind==='victory'?.38:.14));osc.connect(gain);gain.connect(audioContext.destination);osc.start(t);osc.stop(t+(kind==='victory'?.4:.16));});
+  const notes=kind==='victory'?[523.25,659.25,783.99,1046.5]:kind==='incorrect'?[392,329.63]:[659.25,880];
+  notes.forEach((freq,i)=>{const osc=audioContext.createOscillator(),gain=audioContext.createGain(),t=audioContext.currentTime+i*(kind==='victory'?.14:kind==='incorrect'?.11:.075);
+   osc.type='sine';osc.frequency.setValueAtTime(freq,t);gain.gain.setValueAtTime(.0001,t);gain.gain.exponentialRampToValueAtTime(.10,t+.018);gain.gain.exponentialRampToValueAtTime(.0001,t+(kind==='victory'?.38:kind==='incorrect'?.20:.14));osc.connect(gain);gain.connect(audioContext.destination);osc.start(t);osc.stop(t+(kind==='victory'?.4:kind==='incorrect'?.22:.16));});
  }catch(e){}
 }
 function studyControls(){return '<div class="study-controls" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:12px 0 18px"><span role="status"><strong>Daily challenge:</strong> '+Math.min(5,dailyCount())+'/5 correct answers today'+(dailyCount()>=5?' ★ Goal reached!':'')+'</span>'+btn('toggle-sound',state.soundEnabled?'Sound: On 🔊':'Sound: Off 🔇')+'</div>'}
@@ -327,7 +327,7 @@ function render(){
   else if(a.locked&&a.right&&picked){style='answer-success'}
   return '<label class="option-card '+style+(picked?' selected':'')+(a.locked?' locked':'')+'"><input type="'+(Array.isArray(answer)?'checkbox':'radio')+'" name="answer" data-action="pick-'+i+'" '+(picked?'checked ':'')+(a.locked?'disabled':'')+'><span>'+letter(i)+'. '+esc(v)+(label?'<span class="answer-label">'+label+'</span>':'')+'</span></label>';
  }).join('')+'</fieldset>';
- body+=a.locked?'<div role="status" class="feedback '+(a.right?'feedback-success':'')+'">'+(a.right?'<strong>Correct.</strong>':'<strong>Incorrect. The correct '+(answers.length===1?'answer is ':'answers are ')+letters+'.</strong><p>'+esc(why)+'</p>')+'</div><p>'+btn('next',round.pos===4?'Finish round':'Next question →','primary')+'</p>':btn('check','Check answer','primary',!a.pick.length);
+ body+=a.locked?'<div role="status" class="feedback '+(a.right?'feedback-success':'')+'">'+(a.right?'<strong>Correct.</strong><p>'+esc(why)+'</p>':'<strong>Incorrect. The correct '+(answers.length===1?'answer is ':'answers are ')+letters+'.</strong><p>'+esc(why)+'</p>')+'</div><p>'+btn('next',round.pos===4?'Finish round':'Next question →','primary')+'</p>':btn('check','Check answer','primary',!a.pick.length);
  }
  el('card').innerHTML='<section class="cover"><small>'+esc(tag)+'</small><h1>'+esc(title)+'</h1><p>'+esc(sub)+'</p></section><section>'+body+'</section>';
 }
@@ -364,7 +364,7 @@ function act(action){
  else if(action==='toggle-sound'){state.soundEnabled=!state.soundEnabled}
  else if(action==='review-start'){startReview()}
  else if(action.startsWith('review-pick-')&&state.view==='review'){const a=state.reviewSession?.items[state.reviewSession.pos];if(a&&!a.locked){const k=+action.slice(12);a.pick=Array.isArray(a.q[2])?(a.pick.includes(k)?a.pick.filter(v=>v!==k):a.pick.concat(k)):[k]}}
- else if(action==='review-check'&&state.view==='review'){const a=state.reviewSession?.items[state.reviewSession.pos];if(a&&!a.locked&&a.pick.length){const correct=[a.q[2]].flat();a.right=a.pick.length===correct.length&&correct.every(k=>a.pick.includes(k));a.locked=true;if(a.right){recordCorrect();playSound('correct')}const v=state.weakTopics[a.key];if(v){if(a.right)v.recovered=Math.min(v.misses,v.recovered+1);else v.misses++;v.lastQuestion=a.id}}}
+ else if(action==='review-check'&&state.view==='review'){const a=state.reviewSession?.items[state.reviewSession.pos];if(a&&!a.locked&&a.pick.length){const correct=[a.q[2]].flat();a.right=a.pick.length===correct.length&&correct.every(k=>a.pick.includes(k));a.locked=true;if(a.right)recordCorrect();playSound(a.right?'correct':'incorrect');const v=state.weakTopics[a.key];if(v){if(a.right)v.recovered=Math.min(v.misses,v.recovered+1);else v.misses++;v.lastQuestion=a.id}}}
  else if(action==='review-next'&&state.view==='review'){state.reviewSession.pos++}
  else if(action==='outline')state.view='outline';
  else if(action.startsWith('open-')){const [,n,j]=action.split('-');state.lesson=+n;state.section=+j;state.view='learn'}
@@ -378,7 +378,7 @@ function act(action){
   r.rounds.forEach((x,j)=>x.rows.forEach(y=>{const k=j+'-'+y.id;h[k]={count:(h[k]?.count||0)+1,miss:!y.right,last:true};if(y.right&&h[j+'-'+((y.id+5)%10)])h[j+'-'+((y.id+5)%10)].miss=false}));
   state.runs[state.lesson]=makeRun(state.lesson);state.section=0;state.view='learn';
  }else if(action.startsWith('pick-')&&a&&!a.locked){const k=+action.slice(5);a.pick=Array.isArray(a.q[2])?(a.pick.includes(k)?a.pick.filter(v=>v!==k):a.pick.concat(k)):[k]}
- else if(action==='check'&&a&&!a.locked&&a.pick.length){const correct=[a.q[2]].flat();a.right=a.pick.length===correct.length&&correct.every(k=>a.pick.includes(k));a.locked=true;if(a.right){recordCorrect();playSound('correct')}const k=reviewKey(state.lesson,state.section,s.objectives.indexOf(a.objective));const v=state.weakTopics[k]||{misses:0,recovered:0,lastQuestion:null};if(!a.right){v.misses++;v.lastQuestion=a.id;state.weakTopics[k]=v}else if(state.weakTopics[k]){v.recovered=Math.min(v.misses,v.recovered+1)}}
+ else if(action==='check'&&a&&!a.locked&&a.pick.length){const correct=[a.q[2]].flat();a.right=a.pick.length===correct.length&&correct.every(k=>a.pick.includes(k));a.locked=true;if(a.right)recordCorrect();playSound(a.right?'correct':'incorrect');const k=reviewKey(state.lesson,state.section,s.objectives.indexOf(a.objective));const v=state.weakTopics[k]||{misses:0,recovered:0,lastQuestion:null};if(!a.right){v.misses++;v.lastQuestion=a.id;state.weakTopics[k]=v}else if(state.weakTopics[k]){v.recovered=Math.min(v.misses,v.recovered+1)}}
  else if(action==='next'&&a?.locked)round.pos++;
  const celebrate=action==='next'&&finishedRun(r)&&!r.celebrated;
  if(celebrate)r.celebrated=true;
@@ -386,7 +386,7 @@ function act(action){
  rememberPosition();
 }
 document.onchange=e=>{const input=e.target;if(input.matches('.options input, .exam-choice input')){const action=input.dataset.action;act(action);document.querySelector('.options input[data-action="'+action+'"]')?.focus({preventScroll:true})}};
-document.onclick=e=>{if(e.target.closest('#install-help'))return;const b=e.target.closest('button');if(b&&!b.disabled)act(b.dataset.action||'outline')};
+document.onclick=e=>{if(e.target.closest('#install-help'))return;const b=e.target.closest('button');if(!b||b.disabled)return;const action=b.dataset.action||'outline';if(action==='check'||action==='review-check'){b.disabled=true;try{act(action)}catch(err){b.disabled=false;throw err}return}act(action)};
 let scrollSave;
 window.addEventListener('scroll',()=>{clearTimeout(scrollSave);scrollSave=setTimeout(rememberPosition,200)},{passive:true});
 window.addEventListener('pagehide',rememberPosition);
