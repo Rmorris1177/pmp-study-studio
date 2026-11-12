@@ -71,9 +71,19 @@ const server = http.createServer((req, res) => {
     assert.equal(timed.value.exam.durationMs, 6900000, '30-question exam should allow 115 minutes');
     timed.value.exam.startedAt = Date.now() - timed.value.exam.durationMs - 1000;
     await page.evaluate(({ key, value }) => localStorage.setItem(key, JSON.stringify(value)), timed);
+    const persisted = await page.evaluate(key => {
+      const value = JSON.parse(localStorage.getItem(key));
+      return { startedAt: value.exam.startedAt, durationMs: value.exam.durationMs, view: value.view, lastStudy: value.lastStudy };
+    }, timed.key);
+    assert.ok(Date.now() - persisted.startedAt > persisted.durationMs, 'Expired exam timestamp must be persisted');
     await page.reload();
     assert.match(await page.locator('#card').innerText(), /Welcome back/);
     await page.getByRole('button', { name: 'Resume studying' }).click();
+    const afterResume = await page.evaluate(key => {
+      const value = JSON.parse(localStorage.getItem(key));
+      return { startedAt: value.exam.startedAt, durationMs: value.exam.durationMs, finishedAt: value.exam.finishedAt, view: value.view };
+    }, timed.key);
+    console.log('Timed exam reload diagnostics:', JSON.stringify({ persisted, afterResume }));
     assert.match(await page.locator('#card').innerText(), /Practice exam results/, 'Expired exam should finish on reload');
     // Check the main study interface at a phone-sized viewport.
     const mobile = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
