@@ -1,0 +1,39 @@
+name: Validate PMP Study Studio
+
+on:
+  push:
+    branches:
+      - concept-c-redesign-2026-11-11
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate question bank
+        run: node tests/validate-content.cjs
+      - name: Validate exam simulator
+        run: node tests/validate-exams.cjs
+      - name: Check application JavaScript syntax
+        run: |
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const html = fs.readFileSync('index.html', 'utf8');
+          const start = html.lastIndexOf('<script>');
+          const end = html.lastIndexOf('</script>');
+          if (start < 0 || end <= start) throw new Error('Missing application script');
+          new Function(html.slice(start + 8, end));
+          console.log('PASS: application JavaScript parses successfully');
+          NODE
