@@ -478,7 +478,7 @@ if('serviceWorker' in navigator&&location.protocol!=='file:'){
   return navigator.serviceWorker.ready;
  }).then(async()=>{
   const essentials=['./index.html','./manifest.webmanifest','./icons/concept-c-icon.svg','./icons/concept-c-maskable.svg','./icons/icon-192.png','./icons/icon-512.png','./icons/maskable-512.png','./icons/apple-touch-icon.png','./icons/favicon-32.png'];
-  const currentShell='pmp-studio-shell-concept-c-rc9';
+  const currentShell='pmp-studio-shell-concept-c-rc10';
   const shellExists=(await caches.keys()).includes(currentShell);
   const cache=shellExists?await caches.open(currentShell):null;
   const files=cache?await Promise.all(essentials.map(path=>cache.match(new URL(path,location.href)))):[];
