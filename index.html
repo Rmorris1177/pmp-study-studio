@@ -456,7 +456,19 @@ const ios=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='M
 el('install-instructions').textContent=standalone?'You are using the installed app.':ios?'On iPhone or iPad, open this site in Safari, tap Share, then Add to Home Screen. Turn on Open as Web App if offered, then tap Add.':/Android/.test(navigator.userAgent)?'In Chrome, use Install app below when available, or open the browser menu and choose Install app or Add to Home screen.':'In Chrome or Edge, use Install app when available, or the install icon in the address bar. On a Mac, Safari may offer File → Add to Dock. Other browsers may only support a bookmark shortcut.';
 let installPrompt;
 window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();installPrompt=event;if(!standalone)el('install-app').hidden=false});
-el('install-app').onclick=async()=>{if(!installPrompt)return;await installPrompt.prompt();await installPrompt.userChoice;installPrompt=null;el('install-app').hidden=true};
+el('install-app').onclick=async()=>{
+ if(!installPrompt)return;
+ const prompt=installPrompt;installPrompt=null;
+ try{
+  await prompt.prompt();
+  const choice=await prompt.userChoice;
+  el('install-app').hidden=true;
+  if(choice?.outcome==='dismissed')el('install-instructions').textContent='Installation was cancelled. You can still install from your browser menu, or reload this page to try again.';
+ }catch{
+  el('install-app').hidden=true;
+  el('install-instructions').textContent='The installation prompt was unavailable. Use your browser menu to install or add PMP Study Studio to your home screen.';
+ }
+};
 window.addEventListener('appinstalled',()=>{el('install-app').hidden=true;el('install-instructions').textContent='Installed. Open PMP Study Studio from your app launcher or home screen.'});
 if('serviceWorker' in navigator&&location.protocol!=='file:'){
  navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'}).then(reg=>{
