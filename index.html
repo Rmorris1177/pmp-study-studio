@@ -438,6 +438,11 @@ window.addEventListener('scroll',()=>{clearTimeout(scrollSave);scrollSave=setTim
 window.addEventListener('pagehide',rememberPosition);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')rememberPosition()});
 render();save();
+// Keep timed exams honest even when the learner is idle on one question.
+setInterval(()=>{
+ if(state.view!=='exam'||!state.exam||state.exam.finishedAt||state.exam.durationMs===null)return;
+ if(examTimeRemaining(state.exam)===0){state.exam.finishedAt=Date.now();render();rememberPosition();}
+},1000);
 const standalone=matchMedia('(display-mode: standalone)').matches||navigator.standalone;
 const ios=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
 el('install-instructions').textContent=standalone?'You are using the installed app.':ios?'On iPhone or iPad, open this site in Safari, tap Share, then Add to Home Screen. Turn on Open as Web App if offered, then tap Add.':/Android/.test(navigator.userAgent)?'In Chrome, use Install app below when available, or open the browser menu and choose Install app or Add to Home screen.':'In Chrome or Edge, use Install app when available, or the install icon in the address bar. On a Mac, Safari may offer File → Add to Dock. Other browsers may only support a bookmark shortcut.';
