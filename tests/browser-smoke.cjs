@@ -69,8 +69,12 @@ const server = http.createServer((req, res) => {
     });
     assert.ok(timed, 'Timed exam must be saved in localStorage');
     assert.equal(timed.value.exam.durationMs, 6900000, '30-question exam should allow 115 minutes');
-    timed.value.exam.startedAt = Date.now() - timed.value.exam.durationMs - 1000;
-    await page.evaluate(({ key, value }) => localStorage.setItem(key, JSON.stringify(value)), timed);
+    // Change the active app state, not only localStorage: the app persists its
+    // in-memory state on pagehide, which would overwrite a storage-only edit.
+    await page.evaluate(() => {
+      state.exam.startedAt = Date.now() - state.exam.durationMs - 1000;
+      save();
+    });
     const persisted = await page.evaluate(key => {
       const value = JSON.parse(localStorage.getItem(key));
       return { startedAt: value.exam.startedAt, durationMs: value.exam.durationMs, view: value.view, lastStudy: value.lastStudy };
