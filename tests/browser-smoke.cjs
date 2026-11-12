@@ -50,6 +50,31 @@ const server = http.createServer((req, res) => {
     await page.reload();
     await page.getByRole('button', { name: 'Resume studying' }).click();
     assert.match(await page.locator('#card').innerText(), /Question 2 of 30/);
+    // Finish the resumed exam and verify scoring and answer review.
+    await page.getByRole('button', { name: 'Finish early' }).click();
+    assert.match(await page.locator('#card').innerText(), /Practice exam results/);
+    await page.getByText('Review all answers and explanations').click();
+    assert.match(await page.locator('#card').innerText(), /Correct answer:/);
+    await page.getByRole('button', { name: 'Start another exam' }).click();
+    await page.getByRole('button', { name: 'Timed · 30 questions' }).click();
+    assert.match(await page.locator('#card').innerText(), /Time remaining:/);
+    const timed = await page.evaluate(() => {
+      for (const key of Object.keys(localStorage)) {
+        try {
+          const value = JSON.parse(localStorage.getItem(key));
+          if (value && value.exam && value.exam.durationMs) return { key, value };
+        } catch {}
+      }
+      return null;
+    });
+    assert.ok(timed, 'Timed exam must be saved in localStorage');
+    assert.equal(timed.value.exam.durationMs, 6900000, '30-question exam should allow 115 minutes');
+    timed.value.exam.startedAt = Date.now() - timed.value.exam.durationMs - 1000;
+    await page.evaluate(({ key, value }) => localStorage.setItem(key, JSON.stringify(value)), timed);
+    await page.reload();
+    assert.match(await page.locator('#card').innerText(), /Welcome back/);
+    await page.getByRole('button', { name: 'Resume studying' }).click();
+    assert.match(await page.locator('#card').innerText(), /Practice exam results/, 'Expired exam should finish on reload');
     // Check the main study interface at a phone-sized viewport.
     const mobile = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
     const mobileErrors = [];
@@ -64,7 +89,7 @@ const server = http.createServer((req, res) => {
     assert.deepEqual(mobileErrors, [], 'Mobile browser JavaScript errors');
     await mobile.close();
     assert.deepEqual(errors, [], 'Browser JavaScript errors');
-    console.log('PASS: desktop study/exam reload, mobile layout, and install-button smoke checks.');
+    console.log('PASS: practice reload, exam resume/results, timed expiration, mobile layout and install controls.');
   } finally {
     if (browser) await browser.close();
     await new Promise(resolve => server.close(resolve));
