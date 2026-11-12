@@ -478,13 +478,11 @@ if('serviceWorker' in navigator&&location.protocol!=='file:'){
   return navigator.serviceWorker.ready;
  }).then(async()=>{
   const essentials=['./index.html','./manifest.webmanifest','./icons/concept-c-icon.svg','./icons/concept-c-maskable.svg','./icons/icon-192.png','./icons/icon-512.png','./icons/maskable-512.png','./icons/apple-touch-icon.png','./icons/favicon-32.png'];
-  const shellKeys=(await caches.keys()).filter(name=>name.startsWith('pmp-studio-shell-'));
-  const verified=await Promise.all(shellKeys.map(async name=>{
-   const cache=await caches.open(name);
-   const files=await Promise.all(essentials.map(path=>cache.match(new URL(path,location.href))));
-   return files.every(Boolean);
-  }));
-  el('offline-status').textContent=verified.some(Boolean)
+  const currentShell='pmp-studio-shell-concept-c-rc8';
+  const shellExists=(await caches.keys()).includes(currentShell);
+  const cache=shellExists?await caches.open(currentShell):null;
+  const files=cache?await Promise.all(essentials.map(path=>cache.match(new URL(path,location.href)))):[];
+  el('offline-status').textContent=shellExists&&files.length===essentials.length&&files.every(Boolean)
    ?'Offline study files are cached on this device. Your study progress is stored separately in this browser.'
    :'Offline setup is still completing. Keep an internet connection and reopen the app before relying on offline access.';
  }).catch(()=>{el('offline-status').textContent='Offline setup could not be verified. Keep an internet connection and try reopening the app.'});
