@@ -476,7 +476,13 @@ if('serviceWorker' in navigator&&location.protocol!=='file:'){
   const reportUpdate=()=>{if(reg.waiting)el('update-status').hidden=false};reportUpdate();
   reg.addEventListener('updatefound',()=>{const worker=reg.installing;worker?.addEventListener('statechange',reportUpdate)});
   return navigator.serviceWorker.ready;
- }).then(()=>{el('offline-status').textContent='Ready for offline study. All 12 lessons are saved on this device.'}).catch(()=>{el('offline-status').textContent='Offline setup was unavailable. Keep an internet connection and try reopening the app.'});
+ }).then(async()=>{
+  const essentials=['./index.html','./manifest.webmanifest'];
+  const cached=await Promise.all(essentials.map(path=>caches.match(new URL(path,location.href))));
+  el('offline-status').textContent=cached.every(Boolean)
+   ?'Offline study files are cached on this device. Your study progress is stored separately in this browser.'
+   :'Offline setup is still completing. Keep an internet connection and reopen the app before relying on offline access.';
+ }).catch(()=>{el('offline-status').textContent='Offline setup could not be verified. Keep an internet connection and try reopening the app.'});
 }else el('offline-status').textContent='Offline installation is not supported here. Open the published site in a supported browser.';
 </script></html>
 
