@@ -172,7 +172,7 @@ const esc=t=>String(t).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll
 const btn=(a,t,c='',disabled=false)=>'<button data-action="'+a+'" class="'+c+'" '+(disabled?'disabled':'')+'>'+esc(t)+'</button>';
 function read(k){try{return JSON.parse(localStorage.getItem(k))}catch{return null}}
 const savedState=read(key);
-let returning=!!savedState&&Object.keys(savedState.runs||{}).length>0;
+let returning=!!savedState&&Object.values(savedState.runs||{}).some(r=>r?.rounds?.some(x=>x.pos>0||x.rows?.some(y=>y.locked||y.pick?.length)));
 let state=savedState||{lesson:0,section:0,view:'learn',runs:{},history:{}};
 state.weakTopics ||= {}; state.reviewSession ||= null;
 state.soundEnabled ??= true; state.dailyAnswers ||= {};
