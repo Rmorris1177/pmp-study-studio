@@ -195,12 +195,13 @@ function studyControls(){return '<div class="study-controls" style="display:flex
 // Exam simulator runs independently from lesson and smart-review records.
 state.exam ||= null;
 function examPool(){return course.flatMap((lesson,n)=>lesson.sections.flatMap((section,j)=>section.qs.map((q,k)=>({n,j,k,q}))));}
+function shuffleQuestions(items){for(let i=items.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[items[i],items[j]]=[items[j],items[i]];}return items;}
 function startExam(size,timed){
  const pool=examPool(), selected=[], used=new Set();
  // Spread questions across lessons rather than favoring one chapter.
- const buckets=course.map((_,n)=>pool.filter(x=>x.n===n).sort(()=>Math.random()-.5));
+ const buckets=course.map((_,n)=>shuffleQuestions(pool.filter(x=>x.n===n)));
  while(selected.length<size&&buckets.some(x=>x.length))for(const b of buckets){if(selected.length>=size)break;const item=b.shift();if(item&&!used.has(item.n+'-'+item.j+'-'+item.k)){selected.push({...item,pick:[],locked:false});used.add(item.n+'-'+item.j+'-'+item.k)}}
- selected.sort(()=>Math.random()-.5);
+ shuffleQuestions(selected);
  state.exam={items:selected,pos:0,startedAt:Date.now(),durationMs:timed?Math.round(size*230000):null,finishedAt:null};state.view='exam';
 }
 function examTimeRemaining(exam){return exam.durationMs===null?null:Math.max(0,exam.durationMs-(Date.now()-exam.startedAt));}
