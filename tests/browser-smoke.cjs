@@ -50,8 +50,21 @@ const server = http.createServer((req, res) => {
     await page.reload();
     await page.getByRole('button', { name: 'Resume studying' }).click();
     assert.match(await page.locator('#card').innerText(), /Question 2 of 30/);
+    // Check the main study interface at a phone-sized viewport.
+    const mobile = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+    const mobileErrors = [];
+    mobile.on('pageerror', err => mobileErrors.push(err.message));
+    await mobile.goto(url);
+    await mobile.locator('#card').waitFor();
+    assert.ok(await mobile.locator('#install-app').isVisible(), 'Install button must be visible on mobile');
+    const horizontalOverflow = await mobile.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 2);
+    assert.equal(horizontalOverflow, false, 'Unexpected horizontal scrolling on mobile');
+    await mobile.locator('#install-app').click();
+    assert.ok(await mobile.locator('#card').isVisible(), 'Install click should not hide study screen');
+    assert.deepEqual(mobileErrors, [], 'Mobile browser JavaScript errors');
+    await mobile.close();
     assert.deepEqual(errors, [], 'Browser JavaScript errors');
-    console.log('PASS: browser navigation, install button, practice answer, reload/resume, exam answer and resume.');
+    console.log('PASS: desktop study/exam reload, mobile layout, and install-button smoke checks.');
   } finally {
     if (browser) await browser.close();
     await new Promise(resolve => server.close(resolve));
