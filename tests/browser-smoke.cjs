@@ -28,6 +28,8 @@ const server = http.createServer((req, res) => {
     page.on('pageerror', err => errors.push(err.message));
     await page.goto(url);
     await page.locator('#card').waitFor();
+    fs.mkdirSync(path.join(root, 'test-artifacts'), { recursive: true });
+    await page.screenshot({ path: path.join(root, 'test-artifacts', 'desktop-study.png'), fullPage: true });
     assert.match(await page.locator('#card').innerText(), /Essential notes/i);
     // Installing must not navigate away from the current study screen.
     await page.locator('#install-app').click();
@@ -95,6 +97,7 @@ const server = http.createServer((req, res) => {
     mobile.on('pageerror', err => mobileErrors.push(err.message));
     await mobile.goto(url);
     await mobile.locator('#card').waitFor();
+    await mobile.screenshot({ path: path.join(root, 'test-artifacts', 'mobile-study.png'), fullPage: true });
     assert.ok(await mobile.locator('#install-app').isVisible(), 'Install button must be visible on mobile');
     const horizontalOverflow = await mobile.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 2);
     assert.equal(horizontalOverflow, false, 'Unexpected horizontal scrolling on mobile');
