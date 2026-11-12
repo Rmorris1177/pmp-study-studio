@@ -1,5 +1,5 @@
 // Increment this version whenever the app or its offline assets change.
-const CACHE='pmp-studio-shell-concept-c-rc9';
+const CACHE='pmp-studio-shell-concept-c-rc10';
 const ASSETS=['./','./index.html','./manifest.webmanifest','./icons/concept-c-icon.svg','./icons/concept-c-maskable.svg','./icons/icon-192.png','./icons/icon-512.png','./icons/maskable-512.png','./icons/apple-touch-icon.png','./icons/favicon-32.png'];
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS))));
 // Do not skip waiting: updates activate after all existing app windows close.
