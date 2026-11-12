@@ -424,7 +424,7 @@ function act(action){
   r.rounds.forEach((x,j)=>x.rows.forEach(y=>{const k=j+'-'+y.id;h[k]={count:(h[k]?.count||0)+1,miss:!y.right,last:true};if(y.right&&h[j+'-'+((y.id+5)%10)])h[j+'-'+((y.id+5)%10)].miss=false}));
   state.runs[state.lesson]=makeRun(state.lesson);state.section=0;state.view='learn';
  }else if(action.startsWith('pick-')&&a&&!a.locked){const k=+action.slice(5);a.pick=Array.isArray(a.q[2])?(a.pick.includes(k)?a.pick.filter(v=>v!==k):a.pick.concat(k)):[k]}
- else if(action==='check'&&a&&!a.locked&&a.pick.length){const correct=[a.q[2]].flat();a.right=a.pick.length===correct.length&&correct.every(k=>a.pick.includes(k));a.locked=true;if(a.right)recordCorrect();playSound(a.right?'correct':'incorrect');const k=reviewKey(state.lesson,state.section,s.objectives.indexOf(a.objective));const v=state.weakTopics[k]||{misses:0,recovered:0,lastQuestion:null};if(!a.right){v.misses++;v.lastQuestion=a.id;state.weakTopics[k]=v}else if(state.weakTopics[k]){v.recovered=Math.min(v.misses,v.recovered+1)}}
+ else if(action==='check'&&a&&!a.locked&&a.pick.length){const correct=[a.q[2]].flat();a.right=a.pick.length===correct.length&&correct.every(k=>a.pick.includes(k));a.locked=true;if(a.right)recordCorrect();playSound(a.right?'correct':'incorrect');const k=reviewKey(state.lesson,state.section,course[state.lesson].sections[state.section].objectives.indexOf(a.objective));const v=state.weakTopics[k]||{misses:0,recovered:0,lastQuestion:null};if(!a.right){v.misses++;v.lastQuestion=a.id;state.weakTopics[k]=v}else if(state.weakTopics[k]){v.recovered=Math.min(v.misses,v.recovered+1)}}
  else if(action==='next'&&a?.locked)round.pos++;
  const celebrate=action==='next'&&finishedRun(r)&&!r.celebrated;
  if(celebrate)r.celebrated=true;
