@@ -43,3 +43,21 @@ jobs:
           npx playwright install --with-deps chromium
       - name: Run browser smoke test
         run: node tests/browser-smoke.cjs
+      - name: Upload browser screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: concept-c-browser-screenshots
+          path: test-artifacts/*.png
+          if-no-files-found: ignore
+      - name: Package Concept C preview
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pmp-study-studio-concept-c-preview
+          path: |
+            index.html
+            sw.js
+            manifest.webmanifest
+            icons/
+          if-no-files-found: error
