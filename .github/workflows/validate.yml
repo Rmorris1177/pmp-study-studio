@@ -37,3 +37,9 @@ jobs:
           new Function(html.slice(start + 8, end));
           console.log('PASS: application JavaScript parses successfully');
           NODE
+      - name: Install Playwright browser
+        run: |
+          npm install --no-save playwright@1.58.2
+          npx playwright install --with-deps chromium
+      - name: Run browser smoke test
+        run: node tests/browser-smoke.cjs
