@@ -438,7 +438,7 @@ function act(action){
  rememberPosition();
 }
 document.onchange=e=>{const input=e.target;if(input.matches('.options input, .exam-choice input')){const action=input.dataset.action;act(action);document.querySelector('.options input[data-action="'+action+'"]')?.focus({preventScroll:true})}};
-document.onclick=e=>{if(e.target.closest('#install-help'))return;const b=e.target.closest('button');if(!b||b.disabled)return;const action=b.dataset.action||'outline';if(action==='check'||action==='review-check'){b.disabled=true;try{act(action)}catch(err){b.disabled=false;throw err}return}act(action)};
+document.onclick=e=>{if(e.target.closest('#install-help')||e.target.closest('#install-app'))return;const b=e.target.closest('button');if(!b||b.disabled)return;const action=b.dataset.action||'outline';if(action==='check'||action==='review-check'){b.disabled=true;try{act(action)}catch(err){b.disabled=false;throw err}return}act(action)};
 let scrollSave;
 window.addEventListener('scroll',()=>{clearTimeout(scrollSave);scrollSave=setTimeout(rememberPosition,200)},{passive:true});
 window.addEventListener('pagehide',rememberPosition);
