@@ -464,8 +464,8 @@ el('install-app').onclick=async()=>{
  try{
   await prompt.prompt();
   const choice=await prompt.userChoice;
-  if(choice?.outcome==='accepted')el('install-app').hidden=true;
-  else el('install-instructions').textContent='Installation was cancelled. You can still install from your browser menu, or reload this page to try again.';
+  if(choice?.outcome==='accepted')el('install-instructions').textContent='Installation accepted. Once your browser finishes installing, open PMP Study Studio from your app launcher or home screen.';
+  else {el('install-help').open=true;el('install-instructions').textContent='Installation was cancelled. You can still install from your browser menu, or reload this page to try again.';}
  }catch{
   el('install-help').open=true;
   el('install-instructions').textContent='The installation prompt was unavailable. Use your browser menu to install or add PMP Study Studio to your home screen.';
